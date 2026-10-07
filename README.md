@@ -14,7 +14,7 @@ outputs/2026100400Z/
 ├── daily_2026-10-05.png … daily_2026-10-11.png
 ├── total_2026-10-05_2026-10-11.png
 ├── region_stats.csv     mean / max rainfall per admin-1 region and period
-├── caption.txt          forecast note + hashtags
+├── caption.txt          post text with the wettest regions + hashtags
 └── manifest.json        inputs, checksums, versions, the command to reproduce
 ```
 
@@ -107,6 +107,6 @@ Actions tab with a chosen `run` and `start`.
 
 ## Disclaimer
 
-These maps are model-based outlooks, not official weather or flood warnings.
-For official advisories, refer to national meteorological and hydrological
-authorities.
+The maps show raw computer-model guidance, which can change from one run to
+the next. They are not warnings. Warnings and advisories for Somalia come from
+the national meteorological and disaster-management authorities.

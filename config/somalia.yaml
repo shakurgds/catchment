@@ -119,12 +119,15 @@ labels:
     - {name: Juba, lon: 42.35, lat: 2.4}
     - {name: Shabelle, lon: 45.7, lat: 3.85}
 
-caption: >-
-  Forecast note: Based on the NOAA/NCEP GFS {cycle} run of {run_date}. This is a
-  model-based outlook, not an official weather or flood warning. Please refer to
-  national meteorological and hydrological authorities for official advisories.
+# Post text. Placeholders: {week}, {days}, {cycle}, {run_date}, {wettest}
+caption: |-
+  Somalia rainfall outlook for {week}, mapped by UfuqGIS from the NOAA GFS {cycle} run of {run_date}.
 
-hashtags: "#Deyr #ElNino #RainfallForecast #FloodPreparedness #UfuqGIS"
+  Highest {days}-day totals by region: {wettest}.
+
+  This is computer-model guidance and can shift from one run to the next. For warnings and advisories, follow Somalia's national meteorological and disaster-management authorities.
+
+hashtags: "#Somalia #Deyr #RainfallOutlook #JubaShabelle #UfuqGIS"
 
 output:
   dpi: 150

@@ -260,7 +260,7 @@ def render_map(field: Field, layers: Layers, cfg: dict, ctx: Context, run: datet
     # Footer
     fig.add_artist(plt.Line2D([margin / W, 1 - margin / W], [0.4 / H, 0.4 / H], color=t["grid"], lw=0.6))
     fig.text(margin / W, 0.2 / H, f"NOAA/NCEP GFS 0.25°, {run:%HZ} {run.day} {run:%b %Y}  ·  geoBoundaries, Natural Earth"
-             f"{', HydroBASINS' if not layers.basins.empty else ''}  ·  Model outlook, not an official warning",
+             f"{', HydroBASINS' if not layers.basins.empty else ''}  ·  Model guidance only, not a warning",
              fontsize=5.8, color=t["ink_faint"], va="center")
     if cfg.get("brand"):
         fig.text(1 - margin / W, 0.2 / H, cfg["brand"], fontsize=7.2, color=t["ink"], fontweight="semibold",

@@ -125,7 +125,11 @@ def run_forecast(config_path: Path, run_arg: str, start: date | None, out_root: 
         writer.writeheader()
         writer.writerows(stats_rows)
 
-    caption = cfg.get("caption", "").format(cycle=run.strftime("%HZ"), run_date=f"{run.day} {run:%B %Y}")
+    total = sorted((r for r in stats[periods[-1].key] if r["mean_mm"] is not None), key=lambda r: -r["mean_mm"])
+    wettest = ", ".join(f"{rename.get(r['region'], r['region'])} {r['mean_mm']:.0f} mm" for r in total[:3])
+    caption = cfg.get("caption", "").format(
+        week=range_text(start, days), days=days, cycle=run.strftime("%HZ"), run_date=f"{run.day} {run:%B %Y}", wettest=wettest
+    )
     (out_dir / "caption.txt").write_text(f"{caption}\n\n{cfg.get('hashtags', '')}\n".strip() + "\n")
 
     manifest = {
