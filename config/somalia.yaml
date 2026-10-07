@@ -4,7 +4,7 @@
 
 kicker: RAINFALL OUTLOOK
 area_name: SOMALIA
-brand: TerraTech Solutions   # footer signature; remove to hide
+brand: UfuqGIS   # footer signature; remove to hide
 
 # Optional colour overrides for the house style (see THEME in plotting.py)
 style: {}
@@ -124,7 +124,7 @@ caption: >-
   model-based outlook, not an official weather or flood warning. Please refer to
   national meteorological and hydrological authorities for official advisories.
 
-hashtags: "#Deyr #ElNino #RainfallForecast #FloodPreparedness #TerraTechSolutions"
+hashtags: "#Deyr #ElNino #RainfallForecast #FloodPreparedness #UfuqGIS"
 
 output:
   dpi: 150
