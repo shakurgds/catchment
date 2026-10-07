@@ -94,8 +94,13 @@ be rebuilt.
 
 `.github/workflows/weekly-forecast.yml` runs every Sunday at 06:40 UTC on the
 00Z cycle. It installs the locked environment, runs the tests, makes the maps
-and uploads them as a build artifact. You can also start it by hand from the
-Actions tab with a chosen `run` and `start`.
+and commits them to `maps/<run>/` in this repository (for example
+`maps/2026100400Z/`), so every week's maps are kept permanently on GitHub.
+The same files are also attached to the run as a downloadable zip. You can
+start it by hand from the Actions tab with a chosen `run` and `start`.
+
+Scheduled workflows only run from the repository's default branch, so keep
+this workflow on that branch.
 
 ## First run checklist
 

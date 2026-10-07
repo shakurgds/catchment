@@ -17,7 +17,11 @@ on:
         default: config/somalia.yaml
 
 permissions:
-  contents: read
+  contents: write   # the job commits the finished maps to maps/
+
+concurrency:
+  group: weekly-forecast
+  cancel-in-progress: false
 
 jobs:
   maps:
@@ -44,13 +48,28 @@ jobs:
           key: static-${{ hashFiles('config/*.yaml') }}
 
       - name: Make maps
+        id: maps
         run: |
           args=(--config "${{ inputs.config || 'config/somalia.yaml' }}" --run "${{ inputs.run || 'latest' }}")
           if [ -n "${{ inputs.start }}" ]; then args+=(--start "${{ inputs.start }}"); fi
-          catchment forecast "${args[@]}"
+          out_dir=$(catchment forecast "${args[@]}" --out maps | tail -1)
+          echo "dir=${out_dir}" >> "$GITHUB_OUTPUT"
+
+      - name: Save maps to the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add maps
+          if git diff --cached --quiet; then echo "No new maps"; exit 0; fi
+          git commit -m "Add rainfall maps for GFS run $(basename "${{ steps.maps.outputs.dir }}")"
+          for i in 1 2 3 4; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((2 ** i))
+          done
+          exit 1
 
       - uses: actions/upload-artifact@v4
         with:
           name: rainfall-maps-${{ github.run_id }}
-          path: outputs/
+          path: ${{ steps.maps.outputs.dir }}
           retention-days: 90
