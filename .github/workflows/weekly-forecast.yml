@@ -1,0 +1,56 @@
+name: Weekly rainfall forecast maps
+
+on:
+  schedule:
+    # Sunday 06:40 UTC: the 00Z GFS cycle is fully published by ~05:00 UTC.
+    - cron: "40 6 * * 0"
+  workflow_dispatch:
+    inputs:
+      run:
+        description: "GFS cycle (YYYY-MM-DDTHH) or 'latest'"
+        default: latest
+      start:
+        description: "First day YYYY-MM-DD (blank = next Monday after the run)"
+        default: ""
+      config:
+        description: "Config file"
+        default: config/somalia.yaml
+
+permissions:
+  contents: read
+
+jobs:
+  maps:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned environment
+        run: |
+          python -m pip install --require-hashes -r requirements.lock
+          python -m pip install --no-deps -e .
+
+      - name: Tests
+        run: pytest -q
+
+      # Boundaries and HydroBASINS are verified by sha256, so caching them is safe.
+      - uses: actions/cache@v4
+        with:
+          path: cache/static
+          key: static-${{ hashFiles('config/*.yaml') }}
+
+      - name: Make maps
+        run: |
+          args=(--config "${{ inputs.config || 'config/somalia.yaml' }}" --run "${{ inputs.run || 'latest' }}")
+          if [ -n "${{ inputs.start }}" ]; then args+=(--start "${{ inputs.start }}"); fi
+          catchment forecast "${args[@]}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rainfall-maps-${{ github.run_id }}
+          path: outputs/
+          retention-days: 90

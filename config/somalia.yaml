@@ -1,0 +1,123 @@
+# Weekly GFS rainfall forecast maps for Somalia.
+# Every input that shapes the map lives here, so a run is fully described by
+# this file + the GFS cycle (recorded in each run's manifest.json).
+
+title: Weekly Rainfall Forecast
+area_name: SOMALIA
+
+# Map extent: west, south, east, north (degrees)
+bbox: [38.0, -2.5, 51.5, 12.5]
+
+gfs:
+  resolution: 0p25
+  # Tried in order. AWS keeps the full archive; NOMADS only the last ~10 days.
+  base_urls:
+    - https://noaa-gfs-bdp-pds.s3.amazonaws.com
+    - https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod
+  cycles: [0]           # cycles considered by --run latest
+
+period:
+  days: 7               # daily maps + one total map
+  # Day boundaries in local time. 0 = UTC days; 3 = East Africa Time.
+  utc_offset_hours: 0
+
+# Rainfall classes (mm). colours has one entry per class; the last class is open-ended.
+# A "none" colour leaves the class transparent so the base map shows through.
+classes:
+  bounds: [0, 2, 5, 10, 20, 30, 40, 50, 100, 150, 200, 250]
+  colours: ["none", "#fde9bf", "#98e57f", "#1f6e1f", "#c6e6fb", "#3cb9f5",
+            "#6fa7f0", "#0b3d9c", "#4b0f8c", "#f26a12", "#7a0c0c", "#ff3fbf"]
+  # Interpolate the 0.25° grid onto a finer one before contouring (1 = off)
+  upsample: 5
+  # Fade rainfall over the sea so the land signal stands out (0 = off, 1 = hide)
+  ocean_veil: 0.55
+
+sources:
+  country:  # Somalia including Somaliland, as one outline
+    url: https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SOM/ADM0/geoBoundaries-SOM-ADM0_simplified.geojson
+    sha256: ae7cda4305b463a3a75bec0f7c5486a2abe30b88f98022b20d8b70ad7ebf8642
+  regions:
+    url: https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SOM/ADM1/geoBoundaries-SOM-ADM1_simplified.geojson
+    sha256: a3d87cc4bc6f6d32b40862c34efd325ae61fc22c092c81597e8c49c20c681910
+    name_field: shapeName
+  world:
+    url: https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_0_countries.geojson
+    sha256: 239eec57ac17f100a11e2536cffc56752c318b50ae765b0918ff7aab4ce8f255
+    name_field: ADMIN
+    exclude: [Somalia, Somaliland]
+  rivers:
+    url: https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_rivers_lake_centerlines.geojson
+    sha256: bb854a900ecbd3b408df46d5e16e3e0f974ba55993f9d8b5c26e855273c0905a
+    name_field: name
+    names: [Jubba, Genale, Shebele, Shabeelle]
+
+basins:
+  enabled: true
+  required: false       # if the download fails, draw the map without basins
+  # Either point "file" at your own basin polygons (needs a "name" column)...
+  # file: data/juba_shabelle_basins.geojson
+  # ...or trace upstream from outlet points through HydroBASINS:
+  level: 7
+  url: https://data.hydrosheds.org/file/HydroBASINS/standard/hybas_af_lev07_v1c.zip
+  # sha256: <pin after the first successful download; see manifest.json>
+  upstream_only: true   # clip off the part inside Somalia
+  outlets:
+    - {name: Juba Basin, lon: 42.55, lat: 3.80, label_lon: 40.6, label_lat: 5.45}
+    - {name: Shabelle Basin, lon: 45.20, lat: 4.74, label_lon: 41.9, label_lat: 7.0}
+
+labels:
+  countries:
+    - {name: Ethiopia, lon: 39.8, lat: 8.2}
+    - {name: Kenya, lon: 39.8, lat: 0.9}
+    - {name: Djibouti, lon: 42.4, lat: 11.75}
+  seas:
+    - {name: GULF OF ADEN, lon: 46.8, lat: 12.0}
+    - {name: INDIAN OCEAN, lon: 48.8, lat: 1.6}
+  # Display names for admin-1 regions (geoBoundaries name -> label)
+  region_names:
+    Hiiraan: Hiraan
+    Lower Shebelle: Lower Shabelle
+    Middle Shebelle: Middle Shabelle
+  # Optional fixed label positions; otherwise a point inside the polygon is used
+  region_positions:
+    Banadir: [45.95, 1.8]
+    Woqooyi Galbeed: [44.55, 10.2]
+    Awdal: [43.2, 10.55]
+    Lower Shabelle: [44.1, 1.95]
+    Middle Shabelle: [45.65, 2.95]
+    Middle Juba: [42.55, 0.95]
+    Lower Juba: [41.85, 0.0]
+    Gedo: [41.75, 2.65]
+  towns:
+    - {name: Boorama, lon: 43.18, lat: 9.94}
+    - {name: Hargeysa, lon: 44.06, lat: 9.56}
+    - {name: Burco, lon: 45.53, lat: 9.52}
+    - {name: Ceerigaabo, lon: 47.37, lat: 10.62}
+    - {name: Bosaaso, lon: 49.18, lat: 11.28}
+    - {name: Laas Caanood, lon: 47.36, lat: 8.48}
+    - {name: Garoowe, lon: 48.48, lat: 8.40}
+    - {name: Gaalkacyo, lon: 47.43, lat: 6.77}
+    - {name: Dhuusamarreeb, lon: 46.39, lat: 5.54}
+    - {name: Belet Weyne, lon: 45.20, lat: 4.74}
+    - {name: Xudur, lon: 43.89, lat: 4.12}
+    - {name: Garbahaarey, lon: 42.22, lat: 3.33}
+    - {name: Baydhabo, lon: 43.65, lat: 3.12}
+    - {name: Jowhar, lon: 45.50, lat: 2.78}
+    - {name: Mogadishu, lon: 45.34, lat: 2.04}
+    - {name: Marka, lon: 44.77, lat: 1.71}
+    - {name: Bu'aale, lon: 42.58, lat: 0.85}
+    - {name: Kismaayo, lon: 42.54, lat: -0.36}
+  rivers:
+    - {name: Juba, lon: 42.35, lat: 2.4}
+    - {name: Shabelle, lon: 45.7, lat: 3.85}
+
+caption: >-
+  Forecast note: Based on the NOAA/NCEP GFS {cycle} run of {run_date}. This is a
+  model-based outlook, not an official weather or flood warning. Please refer to
+  national meteorological and hydrological authorities for official advisories.
+
+hashtags: "#Deyr #ElNino #RainfallForecast #FloodPreparedness #TerraTechSolutions"
+
+output:
+  dpi: 150
+  width_in: 9.0
