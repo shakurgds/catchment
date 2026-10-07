@@ -122,3 +122,28 @@ def test_build_basins_from_hydrobasins_zip(tmp_path):
     # Cells 2 and 3 are upstream of the outlet; the part inside the "country" is removed.
     assert basins.geometry.iloc[0].bounds == pytest.approx((0, 1.5, 1, 3))
     assert prov[0]["layer"] == "hydrobasins"
+
+
+def test_animation_frames_and_timing(tmp_path):
+    from PIL import Image
+
+    from catchment.animate import write_gif, write_mp4
+
+    pngs = []
+    for i, colour in enumerate(["red", "green", "blue"]):
+        p = tmp_path / f"{i}.png"
+        Image.new("RGB", (101, 120), colour).save(p)  # odd width: MP4 must crop to even
+        pngs.append(p)
+    gif = Image.open(write_gif(pngs, tmp_path / "a.gif", width=50, hold_s=1.0, final_hold_s=2.0))
+    durations = []
+    for i in range(gif.n_frames):
+        gif.seek(i)
+        durations.append(gif.info["duration"])
+    assert durations == [1000, 1000, 2000]
+
+    import imageio_ffmpeg
+
+    reader = imageio_ffmpeg.read_frames(str(write_mp4(pngs, tmp_path / "a.mp4", fps=10, hold_s=1.0, final_hold_s=2.0)))
+    meta = next(reader)
+    assert meta["size"] == (100, 120)
+    assert sum(1 for _ in reader) == 40

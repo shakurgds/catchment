@@ -1,6 +1,6 @@
 {
   "catchment_version": "0.1.0",
-  "generated_utc": "2026-10-07T12:09:14+00:00",
+  "generated_utc": "2026-10-07T12:29:09+00:00",
   "reproduce": "catchment forecast --config config/somalia.yaml --run 2026-10-04T00 --start 2026-10-05",
   "run": "2026-10-04T00:00:00+00:00",
   "start": "2026-10-05",
@@ -310,6 +310,10 @@
       },
       "caption": "Somalia rainfall outlook for {week}, mapped by UfuqGIS from the NOAA GFS {cycle} run of {run_date}.\n\nHighest {days}-day totals by region: {wettest}.\n\nThis is computer-model guidance and can shift from one run to the next. For warnings and advisories, follow Somalia's national meteorological and disaster-management authorities.",
       "hashtags": "#Somalia #Deyr #RainfallOutlook #JubaShabelle #UfuqGIS",
+      "animation": {
+        "gif": true,
+        "mp4": true
+      },
       "output": {
         "dpi": 150,
         "width_in": 9.0
@@ -456,6 +460,18 @@
       "end_fh": 192,
       "kind": "weekly",
       "png": "total_2026-10-05_2026-10-11.png"
+    },
+    {
+      "kind": "overview",
+      "png": "week_overview.png"
+    },
+    {
+      "kind": "animation",
+      "file": "week_animation.gif"
+    },
+    {
+      "kind": "animation",
+      "file": "week_animation.mp4"
     }
   ],
   "environment": {
@@ -465,6 +481,8 @@
     "matplotlib": "3.11.2",
     "geopandas": "1.2.0",
     "shapely": "2.1.2",
-    "pygrib": "2.1.8"
+    "pygrib": "2.1.8",
+    "pillow": "12.3.0",
+    "imageio-ffmpeg": "0.6.0"
   }
 }

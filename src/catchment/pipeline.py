@@ -19,7 +19,8 @@ from . import __version__
 from .boundaries import Layers, load_layers
 from .gfs import Downloader, Field, latest_run, read_field
 from .periods import Period, build_periods, default_start, range_text
-from .plotting import Context, render_map, smooth
+from .animate import write_gif, write_mp4
+from .plotting import Context, render_map, render_overview, smooth
 
 log = logging.getLogger(__name__)
 
@@ -120,6 +121,24 @@ def run_forecast(config_path: Path, run_arg: str, start: date | None, out_root: 
         stats_rows.extend({"period": p.key, **row} for row in stats[p.key])
         log.info("Wrote %s", png)
 
+    # Day by day: one overview page and an animation through the week.
+    week = range_text(start, days)
+    panels = [(f"{date.fromisoformat(d.key):%a} {date.fromisoformat(d.key).day}", f"avg {means[d.key]:.1f} mm",
+               fields[d.key], False) for d in dailies]
+    panels.append((f"{days}-day total", f"avg {means[periods[-1].key]:.0f} mm", fields[periods[-1].key], True))
+    overview = out_dir / "week_overview.png"
+    render_overview(panels, layers, cfg, f"{week.rsplit(' ', 1)[0]}, day by day",
+                    "24-hour rainfall for each day  ·  avg = Somalia area average", run, overview)
+    products.append({"kind": "overview", "png": overview.name})
+
+    acfg = cfg.get("animation", {})
+    frames = [out_dir / p["png"] for p in products if p.get("kind") in ("daily", "weekly")]
+    if acfg.get("gif", True):
+        products.append({"kind": "animation", "file": write_gif(frames, out_dir / "week_animation.gif").name})
+    if acfg.get("mp4", True):
+        products.append({"kind": "animation", "file": write_mp4(frames, out_dir / "week_animation.mp4").name})
+    log.info("Wrote overview and animation to %s", out_dir)
+
     with open(out_dir / "region_stats.csv", "w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=["period", "region", "mean_mm", "max_mm"])
         writer.writeheader()
@@ -146,7 +165,7 @@ def run_forecast(config_path: Path, run_arg: str, start: date | None, out_root: 
         "products": products,
         "environment": {
             "python": platform.python_version(),
-            **{pkg: version(pkg) for pkg in ("numpy", "scipy", "matplotlib", "geopandas", "shapely", "pygrib")},
+            **{pkg: version(pkg) for pkg in ("numpy", "scipy", "matplotlib", "geopandas", "shapely", "pygrib", "pillow", "imageio-ffmpeg")},
         },
     }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str))

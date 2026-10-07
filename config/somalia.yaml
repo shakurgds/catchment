@@ -129,6 +129,11 @@ caption: |-
 
 hashtags: "#Somalia #Deyr #RainfallOutlook #JubaShabelle #UfuqGIS"
 
+# Day-by-day animation of the daily maps, ending on the weekly total
+animation:
+  gif: true    # 720 px wide, loops; good for websites and WhatsApp
+  mp4: true    # full size H.264; best for LinkedIn, which plays video but not GIF
+
 output:
   dpi: 150
   width_in: 9.0

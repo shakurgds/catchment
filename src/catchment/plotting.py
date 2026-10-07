@@ -159,6 +159,70 @@ def _region_chart(ax, rows, box, t):
         ax.text(bar_x + w + 0.08, y, _num(value), va="center", fontsize=6.2, color=t["ink_muted"], zorder=31)
 
 
+def _base_map(ax, field: Field, layers: Layers, cfg: dict, t: dict, mini: bool = False) -> None:
+    """Land, rainfall (clipped to land), graticule, borders and rivers."""
+    west, south, east, north = cfg["bbox"]
+    classes = cfg["classes"]
+    bounds, cmap, norm = class_style(classes)
+    scale = 0.55 if mini else 1.0
+    ax.set_xlim(west, east)
+    ax.set_ylim(south, north)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_facecolor(t["sea"])
+    for s in ax.spines.values():
+        s.set_visible(False)
+
+    land = layers.neighbours.geometry.union_all().union(layers.country.geometry.iloc[0])
+    layers.country.boundary.plot(ax=ax, color=t["coast_glow"], lw=5 * scale, zorder=1)
+    layers.neighbours.boundary.plot(ax=ax, color=t["coast_glow"], lw=5 * scale, zorder=1)
+    layers.neighbours.plot(ax=ax, color=t["land"], edgecolor="none", zorder=2)
+    layers.country.plot(ax=ax, color=t["focus_land"], edgecolor="none", zorder=2)
+
+    f = smooth(field, int(classes.get("upsample", 1)))
+    cs = ax.contourf(f.lons, f.lats, np.clip(f.values, 0, None), levels=bounds, cmap=cmap, norm=norm, zorder=3, antialiased=True)
+    clip = PathPatch(shapely_to_path(land), transform=ax.transData, facecolor="none", edgecolor="none")
+    ax.add_patch(clip)
+    cs.set_clip_path(clip)
+
+    for lon in np.arange(math.ceil(west / 2) * 2, east + 0.01, 2):
+        ax.axvline(lon, color=t["grid"], lw=0.4, ls=(0, (1, 2)), zorder=1.5)
+        if not mini:
+            ax.text(lon, -0.012, f"{lon:g}°E", transform=ax.get_xaxis_transform(), ha="center", va="top",
+                    fontsize=5.6, color=t["ink_faint"])
+    for lat in np.arange(math.ceil(south / 2) * 2, north + 0.01, 2):
+        ax.axhline(lat, color=t["grid"], lw=0.4, ls=(0, (1, 2)), zorder=1.5)
+        if not mini:
+            ax.text(1.008, lat, f"{abs(lat):g}°{'N' if lat >= 0 else 'S'}", transform=ax.get_yaxis_transform(),
+                    va="center", fontsize=5.6, color=t["ink_faint"])
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    layers.regions.boundary.plot(ax=ax, color=t["region_line"], lw=0.6 * scale, zorder=4)
+    layers.neighbours.boundary.plot(ax=ax, color=t["ink_faint"], lw=0.5 * scale, zorder=4)
+    if not layers.basins.empty:
+        layers.basins.boundary.plot(ax=ax, color=t["basin_line"], lw=0.9 * scale, linestyle=(0, (4, 2.5)), zorder=5)
+    layers.rivers.plot(ax=ax, color="white", lw=2.0 * scale, zorder=5)
+    layers.rivers.plot(ax=ax, color=t["river"], lw=0.9 * scale, zorder=5.1)
+    layers.country.boundary.plot(ax=ax, color="white", lw=2.6 * scale, zorder=6)
+    layers.country.boundary.plot(ax=ax, color=t["border"], lw=1.0 * scale, zorder=6.1)
+
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.set_xlim(west, east)
+    ax.set_ylim(south, north)
+
+
+def _footer(fig, W: float, H: float, margin: float, cfg: dict, t: dict, run: datetime, layers: Layers) -> None:
+    fig.add_artist(plt.Line2D([margin / W, 1 - margin / W], [0.4 / H, 0.4 / H], color=t["grid"], lw=0.6))
+    fig.text(margin / W, 0.2 / H, f"NOAA/NCEP GFS 0.25°, {run:%HZ} {run.day} {run:%b %Y}  ·  geoBoundaries, Natural Earth"
+             f"{', HydroBASINS' if not layers.basins.empty else ''}  ·  Model guidance only, not a warning",
+             fontsize=5.8, color=t["ink_faint"], va="center")
+    if cfg.get("brand"):
+        fig.text(1 - margin / W, 0.2 / H, cfg["brand"], fontsize=7.2, color=t["ink"], fontweight="semibold",
+                 ha="right", va="center")
+
+
+
 def render_map(field: Field, layers: Layers, cfg: dict, ctx: Context, run: datetime, out: Path) -> None:
     t = {**THEME, **cfg.get("style", {})}
     west, south, east, north = cfg["bbox"]
@@ -185,44 +249,7 @@ def render_map(field: Field, layers: Layers, cfg: dict, ctx: Context, run: datet
     map_h = H - top - bottom
     map_w = min(W - 2 * margin, map_h * (east - west) / (north - south))
     ax = fig.add_axes([(W - map_w) / 2 / W, bottom / H, map_w / W, map_h / H])
-    ax.set_xlim(west, east)
-    ax.set_ylim(south, north)
-    ax.set_aspect("equal", adjustable="box")
-    ax.set_facecolor(t["sea"])
-    for s in ax.spines.values():
-        s.set_visible(False)
-
-    land = layers.neighbours.geometry.union_all().union(layers.country.geometry.iloc[0])
-    layers.country.boundary.plot(ax=ax, color=t["coast_glow"], lw=5, zorder=1)
-    layers.neighbours.boundary.plot(ax=ax, color=t["coast_glow"], lw=5, zorder=1)
-    layers.neighbours.plot(ax=ax, color=t["land"], edgecolor="none", zorder=2)
-    layers.country.plot(ax=ax, color=t["focus_land"], edgecolor="none", zorder=2)
-
-    f = smooth(field, int(classes.get("upsample", 1)))
-    cs = ax.contourf(f.lons, f.lats, np.clip(f.values, 0, None), levels=bounds, cmap=cmap, norm=norm, zorder=3, antialiased=True)
-    clip = PathPatch(shapely_to_path(land), transform=ax.transData, facecolor="none", edgecolor="none")
-    ax.add_patch(clip)
-    cs.set_clip_path(clip)
-
-    for lon in np.arange(math.ceil(west / 2) * 2, east + 0.01, 2):
-        ax.axvline(lon, color=t["grid"], lw=0.4, ls=(0, (1, 2)), zorder=1.5)
-        ax.text(lon, -0.012, f"{lon:g}°E", transform=ax.get_xaxis_transform(), ha="center", va="top",
-                fontsize=5.6, color=t["ink_faint"])
-    for lat in np.arange(math.ceil(south / 2) * 2, north + 0.01, 2):
-        ax.axhline(lat, color=t["grid"], lw=0.4, ls=(0, (1, 2)), zorder=1.5)
-        ax.text(1.008, lat, f"{abs(lat):g}°{'N' if lat >= 0 else 'S'}", transform=ax.get_yaxis_transform(),
-                va="center", fontsize=5.6, color=t["ink_faint"])
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-    layers.regions.boundary.plot(ax=ax, color=t["region_line"], lw=0.6, zorder=4)
-    layers.neighbours.boundary.plot(ax=ax, color=t["ink_faint"], lw=0.5, zorder=4)
-    if not layers.basins.empty:
-        layers.basins.boundary.plot(ax=ax, color=t["basin_line"], lw=0.9, linestyle=(0, (4, 2.5)), zorder=5)
-    layers.rivers.plot(ax=ax, color="white", lw=2.0, zorder=5)
-    layers.rivers.plot(ax=ax, color=t["river"], lw=0.9, zorder=5.1)
-    layers.country.boundary.plot(ax=ax, color="white", lw=2.6, zorder=6)
-    layers.country.boundary.plot(ax=ax, color=t["border"], lw=1.0, zorder=6.1)
+    _base_map(ax, field, layers, cfg, t)
 
     paper_halo = _halo(t["focus_land"], 2.4)
     for c in labels.get("countries", []):
@@ -257,16 +284,64 @@ def render_map(field: Field, layers: Layers, cfg: dict, ctx: Context, run: datet
     ax.set_xlim(west, east)
     ax.set_ylim(south, north)
 
-    # Footer
-    fig.add_artist(plt.Line2D([margin / W, 1 - margin / W], [0.4 / H, 0.4 / H], color=t["grid"], lw=0.6))
-    fig.text(margin / W, 0.2 / H, f"NOAA/NCEP GFS 0.25°, {run:%HZ} {run.day} {run:%b %Y}  ·  geoBoundaries, Natural Earth"
-             f"{', HydroBASINS' if not layers.basins.empty else ''}  ·  Model guidance only, not a warning",
-             fontsize=5.8, color=t["ink_faint"], va="center")
-    if cfg.get("brand"):
-        fig.text(1 - margin / W, 0.2 / H, cfg["brand"], fontsize=7.2, color=t["ink"], fontweight="semibold",
-                 ha="right", va="center")
+    _footer(fig, W, H, margin, cfg, t, run, layers)
 
     out.parent.mkdir(parents=True, exist_ok=True)
     # Strip timestamps so identical inputs give byte-identical PNGs.
+    fig.savefig(out, dpi=cfg.get("output", {}).get("dpi", 150), metadata={"Software": None}, facecolor=t["paper"])
+    plt.close(fig)
+
+
+def render_overview(
+    panels: list[tuple[str, str, Field, bool]],
+    layers: Layers,
+    cfg: dict,
+    headline: str,
+    subhead: str,
+    run: datetime,
+    out: Path,
+) -> None:
+    """All days on one page: a 4 x 2 grid of small maps sharing one colour bar.
+
+    ``panels`` holds (title, note, field, is_total) in reading order.
+    """
+    t = {**THEME, **cfg.get("style", {})}
+    west, south, east, north = cfg["bbox"]
+    bounds, _, _ = class_style(cfg["classes"])
+    plt.rcParams.update({"font.family": FONT, "text.color": t["ink"]})
+
+    W, margin, gap = 7.2, 0.42, 0.14
+    cols = 4
+    rows = math.ceil(len(panels) / cols)
+    pw = (W - 2 * margin - (cols - 1) * gap) / cols
+    ph = pw * (north - south) / (east - west)
+    title_h, header_h, footer_h = 0.3, 1.72, 0.55
+    H = header_h + rows * (ph + title_h) + (rows - 1) * gap + footer_h
+    fig = plt.figure(figsize=(W, H))
+    fig.patch.set_facecolor(t["paper"])
+
+    fig.text(margin / W, 1 - 0.36 / H, f"{cfg.get('kicker', 'RAINFALL OUTLOOK')}  ·  {cfg.get('area_name', '')}".strip(" ·"),
+             fontsize=8, color=t["accent"], fontweight="semibold")
+    fig.text(margin / W, 1 - 0.78 / H, headline, fontsize=21, fontweight="bold", color=t["ink"])
+    fig.text(margin / W, 1 - 1.06 / H, subhead, fontsize=9, color=t["ink_muted"])
+    _colour_bar(fig, [margin / W, 1 - 1.62 / H, (W - 2 * margin) / W, 0.36 / H], bounds, cfg["classes"]["colours"], t)
+
+    for i, (title, note, field, is_total) in enumerate(panels):
+        r, c = divmod(i, cols)
+        x = margin + c * (pw + gap)
+        y_top = H - header_h - r * (ph + title_h + gap)
+        ax = fig.add_axes([x / W, (y_top - title_h - ph) / H, pw / W, ph / H])
+        _base_map(ax, field, layers, cfg, t, mini=True)
+        colour = t["accent"] if is_total else t["ink"]
+        fig.text(x / W, (y_top - 0.15) / H, title, fontsize=9, fontweight="bold", color=colour, va="center")
+        fig.text((x + pw) / W, (y_top - 0.15) / H, note, fontsize=6.4, color=t["ink_muted"], va="center", ha="right")
+        if is_total:
+            for s in ax.spines.values():
+                s.set_visible(True)
+                s.set_edgecolor(t["accent"])
+                s.set_linewidth(1.4)
+
+    _footer(fig, W, H, margin, cfg, t, run, layers)
+    out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=cfg.get("output", {}).get("dpi", 150), metadata={"Software": None}, facecolor=t["paper"])
     plt.close(fig)

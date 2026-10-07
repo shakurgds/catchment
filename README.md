@@ -13,6 +13,9 @@ catchment forecast --run 2026-10-04T00 --start 2026-10-05
 outputs/2026100400Z/
 ├── daily_2026-10-05.png … daily_2026-10-11.png
 ├── total_2026-10-05_2026-10-11.png
+├── week_overview.png    all seven days and the total on one page
+├── week_animation.mp4   day-by-day animation (full size, for LinkedIn)
+├── week_animation.gif   the same animation, 720 px, loops
 ├── region_stats.csv     mean / max rainfall per admin-1 region and period
 ├── caption.txt          post text with the wettest regions + hashtags
 └── manifest.json        inputs, checksums, versions, the command to reproduce
@@ -78,6 +81,13 @@ Each map is 1080 × 1350 px (4:5, sized for LinkedIn and other social feeds).
   in the empty sea area.
 - **Fonts:** IBM Plex Sans is stored in the package (`src/catchment/fonts`,
   SIL Open Font License), so the maps look the same on every machine.
+
+- **Day by day:** `week_overview.png` puts the seven days and the weekly
+  total side by side, each with its Somalia average. `week_animation.mp4` and
+  `.gif` step through Monday to Sunday (1.6 s per day) and hold the weekly
+  total for 3.5 s before looping. The frames are the finished daily maps, so
+  the animation always matches the stills. LinkedIn plays the MP4 inline but
+  not the GIF. Turn either off under `animation` in the config.
 
 Colours, the brand line in the footer and the chart position can be changed
 under `style`, `brand` and `classes` in the config.
