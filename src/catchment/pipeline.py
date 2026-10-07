@@ -19,7 +19,7 @@ from . import __version__
 from .boundaries import Layers, load_layers
 from .gfs import Downloader, Field, latest_run, read_field
 from .periods import Period, build_periods, default_start, range_text
-from .plotting import render_map, smooth
+from .plotting import Context, render_map, smooth
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +33,22 @@ def period_field(cum: dict[int, Field], p: Period) -> Field:
     end = cum[p.end_fh]
     start = cum[p.start_fh].values if p.start_fh else 0.0
     return Field(lats=end.lats, lons=end.lons, values=np.clip(end.values - start, 0, None))
+
+
+def area_mean(field: Field, geom, upsample: int) -> float:
+    f = smooth(field, upsample)
+    lon2d, lat2d = np.meshgrid(f.lons, f.lats)
+    vals = f.values[shapely.contains_xy(geom, lon2d, lat2d)]
+    return float(vals.mean()) if vals.size else 0.0
+
+
+def headings(p: Period, dailies: list[Period], start: date, days: int) -> dict:
+    week = range_text(start, days)
+    if p.kind == "daily":
+        d = date.fromisoformat(p.key)
+        n = [x.key for x in dailies].index(p.key) + 1
+        return {"headline": f"{d:%A} {d.day} {d:%B}", "subhead": f"24-hour rainfall  ·  day {n} of {days}  ·  {week}"}
+    return {"headline": week.rsplit(" ", 1)[0], "subhead": f"{days}-day rainfall total  ·  {p.label.split(': ', 1)[-1]}"}
 
 
 def region_stats(field: Field, layers: Layers, upsample: int) -> list[dict]:
@@ -82,16 +98,26 @@ def run_forecast(config_path: Path, run_arg: str, start: date | None, out_root: 
 
     out_dir = out_root / run.strftime("%Y%m%d%HZ")
     out_dir.mkdir(parents=True, exist_ok=True)
-    date_range = range_text(start, days)
     upsample = int(cfg["classes"].get("upsample", 1))
+    rename = cfg.get("labels", {}).get("region_names", {})
+
+    fields = {p.key: period_field(cum, p) for p in periods}
+    stats = {p.key: region_stats(fields[p.key], layers, upsample) for p in periods}
+    means = {p.key: area_mean(fields[p.key], layers.country.geometry.iloc[0], upsample) for p in periods}
+    dailies = [p for p in periods if p.kind == "daily"]
+
     products, stats_rows = [], []
     for p in periods:
-        field = period_field(cum, p)
+        ranked = sorted((r for r in stats[p.key] if r["mean_mm"] is not None), key=lambda r: -r["mean_mm"])
+        ctx = Context(
+            timeline=[(date.fromisoformat(d.key).strftime("%a"), means[d.key], p.kind != "daily" or d.key == p.key) for d in dailies],
+            top_regions=[(rename.get(r["region"], r["region"]), r["mean_mm"]) for r in ranked[:6]],
+            **headings(p, dailies, start, days),
+        )
         png = out_dir / f"{'daily' if p.kind == 'daily' else 'total'}_{p.key.removeprefix('total_')}.png"
-        render_map(field, layers, cfg, p.label, date_range, run, png)
+        render_map(fields[p.key], layers, cfg, ctx, run, png)
         products.append({**asdict(p), "png": png.name})
-        for row in region_stats(field, layers, upsample):
-            stats_rows.append({"period": p.key, **row})
+        stats_rows.extend({"period": p.key, **row} for row in stats[p.key])
         log.info("Wrote %s", png)
 
     with open(out_dir / "region_stats.csv", "w", newline="") as fh:

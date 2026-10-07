@@ -2,8 +2,12 @@
 # Every input that shapes the map lives here, so a run is fully described by
 # this file + the GFS cycle (recorded in each run's manifest.json).
 
-title: Weekly Rainfall Forecast
+kicker: RAINFALL OUTLOOK
 area_name: SOMALIA
+brand: TerraTech Solutions   # footer signature; remove to hide
+
+# Optional colour overrides for the house style (see THEME in plotting.py)
+style: {}
 
 # Map extent: west, south, east, north (degrees)
 bbox: [38.0, -2.5, 51.5, 12.5]
@@ -25,12 +29,12 @@ period:
 # A "none" colour leaves the class transparent so the base map shows through.
 classes:
   bounds: [0, 2, 5, 10, 20, 30, 40, 50, 100, 150, 200, 250]
-  colours: ["none", "#fde9bf", "#98e57f", "#1f6e1f", "#c6e6fb", "#3cb9f5",
-            "#6fa7f0", "#0b3d9c", "#4b0f8c", "#f26a12", "#7a0c0c", "#ff3fbf"]
+  # One sequential ramp: each class is darker than the one before (OKLab
+  # lightness falls monotonically), so "more rain" always reads as "darker".
+  colours: ["none", "#f3edc9", "#d9e8a8", "#a9d69a", "#72c09c", "#43a6a3",
+            "#2c87a6", "#2d669f", "#3a4790", "#4a2c7c", "#5a1462", "#2e0734"]
   # Interpolate the 0.25° grid onto a finer one before contouring (1 = off)
   upsample: 5
-  # Fade rainfall over the sea so the land signal stands out (0 = off, 1 = hide)
-  ocean_veil: 0.55
 
 sources:
   country:  # Somalia including Somaliland, as one outline
@@ -71,8 +75,8 @@ labels:
     - {name: Kenya, lon: 39.8, lat: 0.9}
     - {name: Djibouti, lon: 42.4, lat: 11.75}
   seas:
-    - {name: GULF OF ADEN, lon: 46.8, lat: 12.0}
-    - {name: INDIAN OCEAN, lon: 48.8, lat: 1.6}
+    - {name: Gulf of Aden, lon: 46.8, lat: 12.0}
+    - {name: Indian Ocean, lon: 49.2, lat: 4.4}
   # Display names for admin-1 regions (geoBoundaries name -> label)
   region_names:
     Hiiraan: Hiraan
@@ -85,9 +89,13 @@ labels:
     Awdal: [43.2, 10.55]
     Lower Shabelle: [44.1, 1.95]
     Middle Shabelle: [45.65, 2.95]
-    Middle Juba: [42.55, 0.95]
     Lower Juba: [41.85, 0.0]
     Gedo: [41.75, 2.65]
+    Sanaag: [47.95, 10.4]
+    Nugaal: [48.8, 7.95]
+    Bakool: [43.45, 4.5]
+    Middle Juba: [42.2, 1.45]
+    Togdheer: [45.9, 8.95]
   towns:
     - {name: Boorama, lon: 43.18, lat: 9.94}
     - {name: Hargeysa, lon: 44.06, lat: 9.56}

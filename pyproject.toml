@@ -30,7 +30,7 @@ catchment = "catchment.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-catchment = ["py.typed"]
+catchment = ["fonts/*.ttf", "fonts/OFL.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

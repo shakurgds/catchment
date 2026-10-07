@@ -59,9 +59,28 @@ whose forecast is fully published.
    part outside Somalia is drawn. You can use your own polygons instead with
    `basins.file`.
 5. **Rendering.** The 0.25° grid is interpolated bilinearly onto a 0.05° grid
-   and contoured using the classes in `config/somalia.yaml`. Rainfall over the
-   sea is faded. PNG timestamps are removed, so the same inputs produce
-   byte-identical images.
+   and contoured using the classes in `config/somalia.yaml`. PNG timestamps are
+   removed, so the same inputs produce byte-identical images.
+
+## Map design
+
+Each map is 1080 × 1350 px (4:5, sized for LinkedIn and other social feeds).
+
+- **Headline:** the day (or week) is the title. A strip of seven columns shows
+  the Somalia-average rainfall for each day, with the current day highlighted.
+- **Colour scale:** a single sequential ramp from pale straw through green and
+  teal to deep indigo and plum. Each class is darker than the one before, so
+  more rain always reads as darker. The 0–2 mm class is left uncoloured.
+- **Map:** rainfall is drawn over land only. Somalia is lighter than its
+  neighbours, and the border, rivers and labels have halos so they stay
+  readable over any colour.
+- **Wettest regions:** a ranked chart of area-average rainfall by region sits
+  in the empty sea area.
+- **Fonts:** IBM Plex Sans is stored in the package (`src/catchment/fonts`,
+  SIL Open Font License), so the maps look the same on every machine.
+
+Colours, the brand line in the footer and the chart position can be changed
+under `style`, `brand` and `classes` in the config.
 
 ## Reproducing an old map
 
