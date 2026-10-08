@@ -1,0 +1,63 @@
+# Cropland map of Somalia from Google's Satellite Embedding (AlphaEarth Foundations).
+# Run the steps in order:  catchment cropland samples | classify | stats | reference | assess
+# Each step records this whole config in outputs/cropland/<year>/<step>.json.
+
+year: 2024              # embedding year (the dataset starts in 2017)
+
+earthengine:
+  project: YOUR-CLOUD-PROJECT          # or set EE_PROJECT / --project
+  asset_root: projects/YOUR-CLOUD-PROJECT/assets/somalia_cropland
+
+# Same pinned geoBoundaries files as the rainfall maps (config/somalia.yaml).
+sources:
+  country:
+    url: https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SOM/ADM0/geoBoundaries-SOM-ADM0_simplified.geojson
+    sha256: ae7cda4305b463a3a75bec0f7c5486a2abe30b88f98022b20d8b70ad7ebf8642
+  regions:
+    url: https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SOM/ADM1/geoBoundaries-SOM-ADM1_simplified.geojson
+    sha256: a3d87cc4bc6f6d32b40862c34efd325ae61fc22c092c81597e8c49c20c681910
+    name_field: shapeName
+
+labels:
+  # Training labels come from pixels where ALL of these products agree:
+  # cropland where every product says crop, not-crop where none does.
+  products:
+    - name: ESA WorldCover 2021
+      collection: ESA/WorldCover/v200
+      band: Map
+      crop_values: [40]
+    - name: Dynamic World (most common label of the year)
+      collection: GOOGLE/DYNAMICWORLD/V1
+      band: label
+      crop_values: [4]
+      reduce: mode
+      same_year: true
+  # Your own labelled points: CSV with lon, lat, crop (1 = crop, 0 = not crop),
+  # or any vector file with a "crop" column. Added to the consensus points.
+  # points: data/somalia_crop_points.csv
+
+training:
+  scale: 10
+  points_per_region: {crop: 200, not_crop: 400}   # per admin-1 region
+  train_fraction: 0.7     # the rest is held out to score the classifier
+  seed: 42
+  tile_scale: 8           # raise if a task fails with "out of memory"
+
+classifier:
+  trees: 200
+  min_leaf_population: 2
+  bag_fraction: 0.6
+  threshold: 0.5          # crop probability needed to call a pixel cropland
+  min_patch_pixels: 5     # drop cropland patches smaller than this (5 px = 0.05 ha)
+
+export:
+  scale: 10
+  crs: EPSG:4326
+  drive_folder: somalia_cropland   # also export a GeoTIFF / CSV to Google Drive; remove to skip
+
+reference:
+  # Stratified random sample of the finished map for photo-interpretation.
+  seed: 7
+  expected_users_accuracy: [0.95, 0.75]   # [not crop, crop], a guess used to size the sample
+  target_se_overall: 0.01
+  min_per_class: 100

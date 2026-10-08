@@ -147,3 +147,55 @@ def test_animation_frames_and_timing(tmp_path):
     meta = next(reader)
     assert meta["size"] == (100, 120)
     assert sum(1 for _ in reader) == 40
+
+
+def test_olofsson_perfect_map_returns_mapped_area():
+    from catchment.accuracy import olofsson
+
+    r = olofsson([[300, 0], [0, 100]], [9000.0, 1000.0])
+    crop = r["classes"]["crop"]
+    assert crop["estimated_area"] == pytest.approx(1000.0)
+    assert crop["area_se"] == pytest.approx(0.0)
+    assert r["overall_accuracy"] == pytest.approx(1.0)
+
+
+def test_olofsson_hand_computed():
+    from catchment.accuracy import olofsson
+
+    # 10 of 100 crop-mapped samples are not crop; 6 of 300 non-crop samples are crop.
+    r = olofsson([[294, 6], [10, 90]], [9000.0, 1000.0])
+    crop, other = r["classes"]["crop"], r["classes"]["not_crop"]
+    # p(crop) = 0.9 * 6/300 + 0.1 * 90/100 = 0.108
+    assert crop["estimated_area"] == pytest.approx(1080.0)
+    assert crop["estimated_area"] + other["estimated_area"] == pytest.approx(10000.0)
+    assert crop["users_accuracy"] == pytest.approx(0.9)
+    assert crop["producers_accuracy"] == pytest.approx(0.09 / 0.108)
+    assert r["overall_accuracy"] == pytest.approx(0.9 * 294 / 300 + 0.09)
+    se = 10000 * np.sqrt(0.81 * 0.02 * 0.98 / 299 + 0.01 * 0.9 * 0.1 / 99)
+    assert crop["area_se"] == pytest.approx(se)
+
+
+def test_sample_allocation_keeps_minimum_for_rare_class():
+    from catchment.accuracy import sample_allocation
+
+    alloc = sample_allocation([62_000_000, 1_000_000], (0.95, 0.75), 0.01, 100)
+    assert alloc == [390, 100]
+
+
+def test_holdout_metrics():
+    from catchment.accuracy import holdout_metrics
+
+    m = holdout_metrics([[80, 10], [20, 90]])  # rows predicted, cols label
+    assert m["crop_precision"] == pytest.approx(90 / 110)
+    assert m["crop_recall"] == pytest.approx(0.9)
+    assert m["overall_accuracy"] == pytest.approx(0.85)
+
+
+def test_cropland_config_and_asset_ids():
+    from catchment.cropland import BANDS, asset_ids, load_config
+
+    cfg = load_config("config/cropland_somalia.yaml")
+    ids = asset_ids(cfg, 2024)
+    assert ids["map"].endswith("/somalia_cropland/map_2024")
+    assert BANDS[0] == "A00" and BANDS[-1] == "A63" and len(BANDS) == 64
+    assert cfg["sources"]["country"]["sha256"] == load_config("config/somalia.yaml")["sources"]["country"]["sha256"]

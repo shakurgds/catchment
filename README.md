@@ -1,7 +1,8 @@
 # catchment
 
 Reproducible GFS rainfall forecast maps for Somalia and the upstream Juba and
-Shabelle basins. One command takes a GFS cycle and produces seven daily maps,
+Shabelle basins, and a 10 m cropland map of Somalia (see
+[Cropland map](#cropland-map-google-satellite-embedding)). One command takes a GFS cycle and produces seven daily maps,
 a weekly total map, per-region statistics, a ready-to-post caption and a
 manifest that records exactly how the maps were made.
 
@@ -91,6 +92,67 @@ Each map is 1080 × 1350 px (4:5, sized for LinkedIn and other social feeds).
 
 Colours, the brand line in the footer and the chart position can be changed
 under `style`, `brand` and `classes` in the config.
+
+## Cropland map (Google Satellite Embedding)
+
+`catchment cropland` maps cropland across Somalia at 10 m in Google Earth
+Engine, using the annual [Satellite Embedding](https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_SATELLITE_EMBEDDING_V1_ANNUAL)
+dataset (AlphaEarth Foundations). Each pixel has 64 numbers that summarise a
+whole year of optical, radar and other observations, so a random forest on
+those numbers separates fields from rangeland, bush and bare ground. You do
+not need to build seasonal composites or cloud masks.
+
+```bash
+pip install -e '.[cropland]'
+earthengine authenticate
+# set earthengine.project and asset_root in config/cropland_somalia.yaml (or EE_PROJECT)
+
+catchment cropland samples   --wait   # training points  -> asset samples_<year>
+catchment cropland classify  --wait   # probability + map -> asset map_<year> (+ GeoTIFF on Drive)
+catchment cropland stats     --wait   # mapped hectares per region -> asset areas_<year> (+ CSV)
+catchment cropland reference --wait   # random points to label by eye -> Drive CSV
+catchment cropland assess --reference labelled.csv   # accuracy and estimated area
+```
+
+Each step sends batch tasks to Earth Engine and writes a record to
+`outputs/cropland/<year>/<step>.json`. The record holds the full config, the
+task ids, the boundary checksums and, for `classify`, the hold-out scores.
+
+**Training labels.** Training points come from pixels where ESA WorldCover
+2021 and the year's Dynamic World labels **agree**. A pixel is cropland when
+both call it cropland and not cropland when neither does. The points are
+spread over every admin-1 region (200 cropland and 400 other points per
+region by default), so the riverine farms along the Juba and Shabelle do not
+crowd out the rainfed sorghum areas of Bay and Bakool or the Gabiley plain.
+Both products tend to miss small rainfed fields in Somalia, so add your own
+points under `labels.points`: a CSV with `lon`, `lat` and `crop` (1 or 0).
+They are merged with the consensus points. This is the best way to improve
+the map.
+
+**Map.** The `crop_prob` band holds the crop probability (0–100). The
+`cropland` band is 1 where `crop_prob` is at least `classifier.threshold`,
+with patches smaller than `min_patch_pixels` removed.
+
+**How good is it, and how much cropland is there?** The hold-out score in
+`classify.json` is measured on consensus pixels. Those are the easy cases, so
+it overstates accuracy. Counting the map's pixels does not give a correct
+area either, because every map has errors. For a defensible number:
+
+1. `reference` draws a stratified random sample from the finished map. It
+   gives cropland at least 100 points, because cropland is a small share of
+   the country. The sample size comes from `reference.*`, following Olofsson
+   et al. (2014). It writes two CSVs: `plotid, lon, lat` for the interpreters
+   and a separate key with the map class, so the interpreters cannot see the
+   map's answer.
+2. Label each point (1 = crop, 0 = not crop) on high-resolution imagery, for
+   example in Collect Earth Online or QGIS with Google or Bing basemaps. Add a
+   `crop` column.
+3. `assess --reference that.csv` gives user's and producer's accuracy and an
+   estimated cropland area with a 95 % confidence interval. The results go to
+   `outputs/cropland/<year>/area_estimate.csv` and `assess.json`.
+
+Use the estimated area, not the pixel count, when you report how much
+cropland Somalia has. To map another year, use `--year` (2017 onwards).
 
 ## Reproducing an old map
 

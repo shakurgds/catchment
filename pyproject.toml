@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "catchment"
 version = "0.1.0"
-description = "Reproducible GFS rainfall forecast maps for Somalia and the Juba/Shabelle basins"
+description = "Reproducible GFS rainfall forecast maps and a cropland map for Somalia"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -24,6 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+cropland = ["earthengine-api>=1.0", "pandas>=2.0"]
 
 [project.scripts]
 catchment = "catchment.cli:main"
