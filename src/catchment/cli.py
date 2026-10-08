@@ -1,4 +1,4 @@
-"""Command-line entry point: ``catchment forecast``."""
+"""Command-line entry point: ``catchment forecast`` and ``catchment water``."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from datetime import date
 from pathlib import Path
 
 from .pipeline import run_forecast
+from .water import run_water
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -22,9 +23,22 @@ def main(argv: list[str] | None = None) -> None:
     fc.add_argument("--cache", type=Path, default=Path("cache"))
     fc.add_argument("-v", "--verbose", action="store_true")
 
+    wa = sub.add_parser("water", help="Check water points and ponds for open water with Sentinel-2")
+    wa.add_argument("--config", type=Path, default=Path("config/water.yaml"))
+    wa.add_argument("--points", type=Path, help="Water points file (CSV with lon/lat, GeoJSON, GPKG, SHP)")
+    wa.add_argument("--date", type=date.fromisoformat, help="Last day of the period (YYYY-MM-DD); default: yesterday")
+    wa.add_argument("--out", type=Path, default=Path("outputs"))
+    wa.add_argument("--cache", type=Path, default=Path("cache"))
+    wa.add_argument("-v", "--verbose", action="store_true")
+
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s %(message)s")
-    out = run_forecast(args.config, args.run, args.start, args.out, args.cache)
+    if not args.verbose:  # GDAL reports every HTTP retry; our own log says when a scene is skipped
+        logging.getLogger("rasterio").setLevel(logging.ERROR)
+    if args.command == "water":
+        out = run_water(args.config, args.date, args.points, args.out, args.cache)
+    else:
+        out = run_forecast(args.config, args.run, args.start, args.out, args.cache)
     print(out)
 
 

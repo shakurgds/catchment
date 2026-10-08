@@ -1,0 +1,57 @@
+# Surface water at berkads, dams, ponds and other water points (Sentinel-2).
+# Borders, regions, labels, map extent and style come from somalia.yaml.
+extends: somalia.yaml
+
+water:
+  kicker: SURFACE WATER
+
+  points:
+    # Your inventory. CSV/TSV with longitude/latitude columns, or any vector
+    # file (GeoJSON, GeoPackage, shapefile). Polygons (mapped pond outlines)
+    # are used as their own footprint. --points on the command line wins.
+    file: data/water_points.csv
+    # lon_field: longitude     # found automatically if named lon/longitude/x
+    # lat_field: latitude      # found automatically if named lat/latitude/y
+    id_field: id               # unique id; leave out to number the rows
+    name_field: name
+    type_field: type           # e.g. berkad, dam, pond, balli, well
+    default_type: water point  # used when there is no type column
+    # Radius (m) searched around each point, by type (case-insensitive).
+    # Sentinel-2 pixels are 10 m, so a 15 x 20 m berkad covers only a few.
+    radius_m:
+      default: 30
+      berkad: 25
+      birkad: 25
+      well: 20
+      borehole: 20
+      dam: 60
+      pond: 60
+      balli: 60
+      war: 60
+
+  # Two periods of this many days are compared: the latest (ending on
+  # --date, default yesterday) and the one before it.
+  window_days: 15
+
+  # A 10 m pixel is open water when both indices exceed their thresholds:
+  #   MNDWI = (green - SWIR) / (green + SWIR)   B03, B11
+  #   NDWI  = (green - NIR)  / (green + NIR)    B03, B08
+  mndwi_min: 0.0
+  ndwi_min: 0.0
+  min_water_pixels: 1       # water pixels needed to call a point "holding water"
+  min_clear_fraction: 0.6   # share of the footprint that must be cloud-free
+  max_scene_cloud: 95       # skip scenes cloudier than this (tile-wide %)
+  area_change: 0.3          # +/-30 % water area (and >= 3 pixels, 300 m2) = rising/falling
+
+  workers: 8                # tiles read in parallel
+  gdal_cache_mb: 512
+
+  # Post text. Placeholders: {period}, {before}, {water}, {seen}, {total},
+  # {filling}, {drying}, {top}
+  caption: |-
+    Are Somalia's berkads and water points filling? Sentinel-2 view for {period}, mapped by UfuqGIS.
+
+    {water} of {seen} water points seen through the clouds hold open water. Compared with {before}, {filling} are filling and {drying} are drying. Highest share with water: {top}.
+
+    Satellite estimate at 10 m resolution: covered or very small berkads cannot be seen, and cloud hides some points. Check on the ground before acting on it.
+  hashtags: "#Somalia #Berkad #Water #Sentinel2 #UfuqGIS"

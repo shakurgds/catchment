@@ -117,7 +117,7 @@ def _colour_bar(fig, rect, bounds, colours, t):
     ax.text(n, 0.12, "mm", ha="center", va="center", fontsize=6.6, color=t["ink_muted"])
 
 
-def _timeline(fig, rect, timeline, t):
+def _timeline(fig, rect, timeline, t, note: str = "Somalia average per day, mm", all_values: bool = False):
     """Seven mini columns, one per day; height = country-mean rainfall."""
     ax = fig.add_axes(rect)
     ax.set_axis_off()
@@ -125,7 +125,7 @@ def _timeline(fig, rect, timeline, t):
     peak = max([v for _, v, _ in timeline] + [1.0])
     ax.set_xlim(-0.6, n - 0.4)
     ax.set_ylim(-0.62, 1.12)
-    ax.text(n - 0.4, -0.55, "Somalia average per day, mm", ha="right", va="center", fontsize=5.6, color=t["ink_faint"])
+    ax.text(n - 0.4, -0.55, note, ha="right", va="center", fontsize=5.6, color=t["ink_faint"])
     for i, (day, value, current) in enumerate(timeline):
         h = 0.06 + 0.84 * value / peak
         colour = t["accent"] if current else t["grid"]
@@ -133,17 +133,18 @@ def _timeline(fig, rect, timeline, t):
                                     facecolor=colour, edgecolor="none", mutation_aspect=0.4))
         ax.text(i, -0.22, day, ha="center", va="center", fontsize=6.8,
                 color=t["ink"] if current else t["ink_faint"], fontweight="semibold" if current else "regular")
-        if current:
-            ax.text(i, h + 0.12, _num(value), ha="center", va="bottom", fontsize=6.6, color=t["accent"], fontweight="semibold")
+        if current or all_values:
+            ax.text(i, h + 0.12, _num(value), ha="center", va="bottom", fontsize=6.6,
+                    color=t["accent"] if current else t["ink_faint"], fontweight="semibold")
 
 
-def _region_chart(ax, rows, box, t):
+def _region_chart(ax, rows, box, t, title: str = "WETTEST REGIONS", note: str = "area-average rainfall, mm"):
     """Ranked horizontal bars drawn in data coordinates inside the map."""
     x0, y0, x1, y1 = box
     ax.add_patch(FancyBboxPatch((x0, y0), x1 - x0, y1 - y0, boxstyle="round,pad=0,rounding_size=0.18",
                                 facecolor=t["paper"], edgecolor="none", alpha=0.92, zorder=30))
-    ax.text(x0 + 0.25, y1 - 0.35, "WETTEST REGIONS", fontsize=6.4, color=t["accent"], fontweight="semibold", zorder=31)
-    ax.text(x0 + 0.25, y1 - 0.68, "area-average rainfall, mm", fontsize=6, color=t["ink_muted"], zorder=31)
+    ax.text(x0 + 0.25, y1 - 0.35, title, fontsize=6.4, color=t["accent"], fontweight="semibold", zorder=31)
+    ax.text(x0 + 0.25, y1 - 0.68, note, fontsize=6, color=t["ink_muted"], zorder=31)
     if not rows:
         return
     peak = max(v for _, v in rows) or 1.0
@@ -159,11 +160,9 @@ def _region_chart(ax, rows, box, t):
         ax.text(bar_x + w + 0.08, y, _num(value), va="center", fontsize=6.2, color=t["ink_muted"], zorder=31)
 
 
-def _base_map(ax, field: Field, layers: Layers, cfg: dict, t: dict, mini: bool = False) -> None:
-    """Land, rainfall (clipped to land), graticule, borders and rivers."""
+def _base_map(ax, field: Field | None, layers: Layers, cfg: dict, t: dict, mini: bool = False) -> None:
+    """Land, rainfall (clipped to land; skipped when ``field`` is None), graticule, borders and rivers."""
     west, south, east, north = cfg["bbox"]
-    classes = cfg["classes"]
-    bounds, cmap, norm = class_style(classes)
     scale = 0.55 if mini else 1.0
     ax.set_xlim(west, east)
     ax.set_ylim(south, north)
@@ -178,11 +177,15 @@ def _base_map(ax, field: Field, layers: Layers, cfg: dict, t: dict, mini: bool =
     layers.neighbours.plot(ax=ax, color=t["land"], edgecolor="none", zorder=2)
     layers.country.plot(ax=ax, color=t["focus_land"], edgecolor="none", zorder=2)
 
-    f = smooth(field, int(classes.get("upsample", 1)))
-    cs = ax.contourf(f.lons, f.lats, np.clip(f.values, 0, None), levels=bounds, cmap=cmap, norm=norm, zorder=3, antialiased=True)
-    clip = PathPatch(shapely_to_path(land), transform=ax.transData, facecolor="none", edgecolor="none")
-    ax.add_patch(clip)
-    cs.set_clip_path(clip)
+    if field is not None:
+        classes = cfg["classes"]
+        bounds, cmap, norm = class_style(classes)
+        f = smooth(field, int(classes.get("upsample", 1)))
+        cs = ax.contourf(f.lons, f.lats, np.clip(f.values, 0, None), levels=bounds, cmap=cmap, norm=norm, zorder=3,
+                         antialiased=True)
+        clip = PathPatch(shapely_to_path(land), transform=ax.transData, facecolor="none", edgecolor="none")
+        ax.add_patch(clip)
+        cs.set_clip_path(clip)
 
     for lon in np.arange(math.ceil(west / 2) * 2, east + 0.01, 2):
         ax.axvline(lon, color=t["grid"], lw=0.4, ls=(0, (1, 2)), zorder=1.5)
@@ -212,10 +215,13 @@ def _base_map(ax, field: Field, layers: Layers, cfg: dict, t: dict, mini: bool =
     ax.set_ylim(south, north)
 
 
-def _footer(fig, W: float, H: float, margin: float, cfg: dict, t: dict, run: datetime, layers: Layers) -> None:
+def _footer(fig, W: float, H: float, margin: float, cfg: dict, t: dict, run: datetime | None, layers: Layers,
+            source: str | None = None) -> None:
     fig.add_artist(plt.Line2D([margin / W, 1 - margin / W], [0.4 / H, 0.4 / H], color=t["grid"], lw=0.6))
-    fig.text(margin / W, 0.2 / H, f"NOAA/NCEP GFS 0.25°, {run:%HZ} {run.day} {run:%b %Y}  ·  geoBoundaries, Natural Earth"
-             f"{', HydroBASINS' if not layers.basins.empty else ''}  ·  Model guidance only, not a warning",
+    if source is None:
+        source = (f"NOAA/NCEP GFS 0.25°, {run:%HZ} {run.day} {run:%b %Y}  ·  geoBoundaries, Natural Earth"
+                  f"{', HydroBASINS' if not layers.basins.empty else ''}  ·  Model guidance only, not a warning")
+    fig.text(margin / W, 0.2 / H, source,
              fontsize=5.8, color=t["ink_faint"], va="center")
     if cfg.get("brand"):
         fig.text(1 - margin / W, 0.2 / H, cfg["brand"], fontsize=7.2, color=t["ink"], fontweight="semibold",
@@ -223,34 +229,9 @@ def _footer(fig, W: float, H: float, margin: float, cfg: dict, t: dict, run: dat
 
 
 
-def render_map(field: Field, layers: Layers, cfg: dict, ctx: Context, run: datetime, out: Path) -> None:
-    t = {**THEME, **cfg.get("style", {})}
-    west, south, east, north = cfg["bbox"]
-    classes = cfg["classes"]
+def _labels(ax, layers: Layers, cfg: dict, t: dict) -> None:
+    """Country, sea, basin, region, town and river labels."""
     labels = cfg.get("labels", {})
-    bounds, cmap, norm = class_style(classes)
-    plt.rcParams.update({"font.family": FONT, "text.color": t["ink"]})
-
-    W, H = 7.2, 9.0  # 4:5, 1080 x 1350 px at 150 dpi
-    fig = plt.figure(figsize=(W, H))
-    fig.patch.set_facecolor(t["paper"])
-    margin = 0.42
-
-    # Headline block
-    fig.text(margin / W, 1 - 0.36 / H, f"{cfg.get('kicker', 'RAINFALL OUTLOOK')}  ·  {cfg.get('area_name', '')}".strip(" ·"),
-             fontsize=8, color=t["accent"], fontweight="semibold")
-    fig.text(margin / W, 1 - 0.78 / H, ctx.headline, fontsize=21, fontweight="bold", color=t["ink"])
-    fig.text(margin / W, 1 - 1.06 / H, ctx.subhead, fontsize=9, color=t["ink_muted"])
-    _timeline(fig, [(W - margin - 2.1) / W, 1 - 1.3 / H, 2.1 / W, 0.94 / H], ctx.timeline, t)
-    _colour_bar(fig, [margin / W, 1 - 1.62 / H, (W - 2 * margin) / W, 0.36 / H], bounds, classes["colours"], t)
-
-    # Map
-    top, bottom = 1.72, 0.62
-    map_h = H - top - bottom
-    map_w = min(W - 2 * margin, map_h * (east - west) / (north - south))
-    ax = fig.add_axes([(W - map_w) / 2 / W, bottom / H, map_w / W, map_h / H])
-    _base_map(ax, field, layers, cfg, t)
-
     paper_halo = _halo(t["focus_land"], 2.4)
     for c in labels.get("countries", []):
         ax.text(c["lon"], c["lat"], c["name"].upper(), color=t["ink_muted"], fontsize=8, ha="center",
@@ -276,6 +257,36 @@ def render_map(field: Field, layers: Layers, cfg: dict, ctx: Context, run: datet
     for rv in labels.get("rivers", []):
         ax.text(rv["lon"], rv["lat"], rv["name"], fontsize=6.6, color=t["river"], fontstyle="italic", zorder=10,
                 path_effects=paper_halo)
+
+
+def render_map(field: Field, layers: Layers, cfg: dict, ctx: Context, run: datetime, out: Path) -> None:
+    t = {**THEME, **cfg.get("style", {})}
+    west, south, east, north = cfg["bbox"]
+    classes = cfg["classes"]
+    bounds, cmap, norm = class_style(classes)
+    plt.rcParams.update({"font.family": FONT, "text.color": t["ink"]})
+
+    W, H = 7.2, 9.0  # 4:5, 1080 x 1350 px at 150 dpi
+    fig = plt.figure(figsize=(W, H))
+    fig.patch.set_facecolor(t["paper"])
+    margin = 0.42
+
+    # Headline block
+    fig.text(margin / W, 1 - 0.36 / H, f"{cfg.get('kicker', 'RAINFALL OUTLOOK')}  ·  {cfg.get('area_name', '')}".strip(" ·"),
+             fontsize=8, color=t["accent"], fontweight="semibold")
+    fig.text(margin / W, 1 - 0.78 / H, ctx.headline, fontsize=21, fontweight="bold", color=t["ink"])
+    fig.text(margin / W, 1 - 1.06 / H, ctx.subhead, fontsize=9, color=t["ink_muted"])
+    _timeline(fig, [(W - margin - 2.1) / W, 1 - 1.3 / H, 2.1 / W, 0.94 / H], ctx.timeline, t)
+    _colour_bar(fig, [margin / W, 1 - 1.62 / H, (W - 2 * margin) / W, 0.36 / H], bounds, classes["colours"], t)
+
+    # Map
+    top, bottom = 1.72, 0.62
+    map_h = H - top - bottom
+    map_w = min(W - 2 * margin, map_h * (east - west) / (north - south))
+    ax = fig.add_axes([(W - map_w) / 2 / W, bottom / H, map_w / W, map_h / H])
+    _base_map(ax, field, layers, cfg, t)
+
+    _labels(ax, layers, cfg, t)
 
     chart_box = cfg.get("style", {}).get("region_chart_box", [46.7, -2.2, 51.3, 2.9])
     _region_chart(ax, ctx.top_regions, chart_box, t)
@@ -342,6 +353,95 @@ def render_overview(
                 s.set_linewidth(1.4)
 
     _footer(fig, W, H, margin, cfg, t, run, layers)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=cfg.get("output", {}).get("dpi", 150), metadata={"Software": None}, facecolor=t["paper"])
+    plt.close(fig)
+
+
+@dataclass
+class PointClass:
+    key: str
+    label: str
+    colour: str
+    hollow: bool = False  # drawn as an outline (e.g. "no clear view")
+
+
+def _category_legend(fig, rect, items: list[tuple[PointClass, int]], t: dict) -> None:
+    """One row of dots with labels and counts, in place of the stepped colour bar."""
+    ax = fig.add_axes(rect)
+    ax.set_axis_off()
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    x = 0.0
+    for pc, count in items:
+        ax.plot(x + 0.008, 0.55, "o", ms=6.5, mfc="none" if pc.hollow else pc.colour, mec=pc.colour, mew=1.2)
+        label = ax.text(x + 0.022, 0.55, pc.label, va="center", fontsize=7.4, color=t["ink"])
+        ax.text(x + 0.022, 0.1, f"{count:,}", va="center", fontsize=6.6, color=t["ink_muted"])
+        bb = label.get_window_extent(renderer=fig.canvas.get_renderer()).transformed(ax.transData.inverted())
+        x = bb.x1 + 0.035
+
+
+def render_points_map(
+    points,
+    column: str,
+    classes: list[PointClass],
+    layers: Layers,
+    cfg: dict,
+    ctx: Context,
+    source: str,
+    out: Path,
+    chart: tuple[str, str] = ("REGIONS", ""),
+) -> None:
+    """Water points coloured by a category column, in the rainfall maps' layout.
+
+    ``points`` is a GeoDataFrame of points; ``ctx.timeline`` feeds the small
+    column strip, ``ctx.top_regions`` the ranked chart in the sea.
+    """
+    t = {**THEME, **cfg.get("style", {})}
+    west, south, east, north = cfg["bbox"]
+    plt.rcParams.update({"font.family": FONT, "text.color": t["ink"]})
+
+    W, H = 7.2, 9.0
+    fig = plt.figure(figsize=(W, H))
+    fig.patch.set_facecolor(t["paper"])
+    margin = 0.42
+
+    fig.text(margin / W, 1 - 0.36 / H, f"{cfg.get('kicker', '')}  ·  {cfg.get('area_name', '')}".strip(" ·"),
+             fontsize=8, color=t["accent"], fontweight="semibold")
+    fig.text(margin / W, 1 - 0.78 / H, ctx.headline, fontsize=21, fontweight="bold", color=t["ink"])
+    fig.text(margin / W, 1 - 1.06 / H, ctx.subhead, fontsize=9, color=t["ink_muted"])
+    if ctx.timeline:
+        strip_w = 0.55 * len(ctx.timeline) + 0.5
+        _timeline(fig, [(W - margin - strip_w) / W, 1 - 1.3 / H, strip_w / W, 0.94 / H], ctx.timeline, t,
+                  note=cfg.get("timeline_note", "% of points holding water"), all_values=True)
+    counts = points[column].value_counts()
+    _category_legend(fig, [margin / W, 1 - 1.62 / H, (W - 2 * margin) / W, 0.36 / H],
+                     [(pc, int(counts.get(pc.key, 0))) for pc in classes], t)
+
+    top, bottom = 1.72, 0.62
+    map_h = H - top - bottom
+    map_w = min(W - 2 * margin, map_h * (east - west) / (north - south))
+    ax = fig.add_axes([(W - map_w) / 2 / W, bottom / H, map_w / W, map_h / H])
+    _base_map(ax, None, layers, cfg, t)
+
+    n = len(points)
+    ms = 4.2 if n < 300 else 3.0 if n < 3000 else 2.0 if n < 15000 else 1.4
+    # Draw in reverse legend order so the first (most important) class sits on top.
+    for z, pc in enumerate(reversed(classes)):
+        sub = points[points[column] == pc.key]
+        if sub.empty:
+            continue
+        ax.plot(sub.geometry.x, sub.geometry.y, "o", ms=ms, mfc="none" if pc.hollow else pc.colour,
+                mec=pc.colour if pc.hollow else t["focus_land"], mew=0.7 if pc.hollow else 0.25, zorder=7 + z * 0.01,
+                linestyle="none")
+
+    _labels(ax, layers, cfg, t)
+    chart_box = cfg.get("style", {}).get("region_chart_box", [46.7, -2.2, 51.3, 2.9])
+    _region_chart(ax, ctx.top_regions, chart_box, t, title=chart[0], note=chart[1])
+    ax.set_xlim(west, east)
+    ax.set_ylim(south, north)
+
+    _footer(fig, W, H, margin, cfg, t, None, layers, source=source)
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=cfg.get("output", {}).get("dpi", 150), metadata={"Software": None}, facecolor=t["paper"])
     plt.close(fig)

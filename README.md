@@ -1,7 +1,10 @@
 # catchment
 
 Reproducible GFS rainfall forecast maps for Somalia and the upstream Juba and
-Shabelle basins. One command takes a GFS cycle and produces seven daily maps,
+Shabelle basins, plus a Sentinel-2 check of whether berkads, ponds and other
+water points are filling (see [Surface water](#surface-water-at-berkads-and-water-points)).
+
+One command takes a GFS cycle and produces seven daily maps,
 a weekly total map, per-region statistics, a ready-to-post caption and a
 manifest that records exactly how the maps were made.
 
@@ -91,6 +94,72 @@ Each map is 1080 × 1350 px (4:5, sized for LinkedIn and other social feeds).
 
 Colours, the brand line in the footer and the chart position can be changed
 under `style`, `brand` and `classes` in the config.
+
+## Surface water at berkads and water points
+
+`catchment water` checks every berkad, dam, pond (balli/war) or other water
+point in your inventory for open water, using Sentinel-2 satellite images, and
+shows whether they are filling or drying.
+
+```
+catchment water --points data/water_points.csv                    # 15 days to yesterday
+catchment water --points data/water_points.csv --date 2026-10-06
+```
+
+```
+outputs/water_20261006/
+├── water_status.png      holding water / dry / no clear view, with % by region
+├── water_change.png      filled, rising, steady, falling, dried up, still dry
+├── water_points.csv      one row per point: status, date and scene used, water area
+├── water_points.geojson  the same, for QGIS/ArcGIS
+├── region_summary.csv    counts and % holding water per admin-1 region
+├── caption.txt           post text
+└── manifest.json         periods, every Sentinel-2 scene read, inputs, versions
+```
+
+**Points file.** A CSV with longitude and latitude columns (`lon`/`lat`,
+`longitude`/`latitude` or `x`/`y` are found automatically), or any vector file
+(GeoJSON, GeoPackage, shapefile). Optional `id`, `name` and `type` columns;
+the column names are set under `water.points` in `config/water.yaml`. Mapped
+pond outlines (polygons) are used as their own footprint. See
+`data/water_points.example.csv`. Put the national inventory at
+`data/water_points.csv` for the weekly workflow.
+
+**How it works.**
+
+1. **Periods.** The latest `window_days` (15) ending on `--date` are compared
+   with the 15 days before.
+2. **Images.** Sentinel-2 L2A scenes come from the Earth Search COG archive on
+   AWS Open Data (`s3://sentinel-cogs`). Scenes are found by listing the
+   bucket for each point's MGRS tile, so no search API or account is needed.
+   Only the pixels around each point are downloaded.
+3. **Footprint.** Each point gets a circle with a radius set by type under
+   `water.radius_m` (berkad 25 m, dam/pond 60 m, default 30 m).
+4. **Water test.** A 10 m pixel counts as water when MNDWI (green vs SWIR,
+   B03/B11) and NDWI (green vs NIR, B03/B08) are both above 0. Cloud, cloud
+   shadow and cirrus are masked with the scene classification layer (SCL).
+   Over clear dry land this flags about 3 pixels in a million.
+5. **Status.** The newest view in each period with at least 60 % of the
+   footprint cloud-free decides **holding water** or **dry**. When no view is
+   that clear, water seen through gaps in the cloud still counts. Otherwise
+   the point has **no clear view**.
+6. **Change.** Dry → water is *filled* and water → dry is *dried up*. When a
+   point holds water in both periods, a change in water area of 30 % (and at
+   least 3 pixels) makes it *rising* or *falling*.
+
+**Limits.** Sentinel-2 pixels are 10 m (20 m for SWIR). Covered berkads, and
+open ones smaller than about 10 × 10 m, cannot be seen. Algae or floating
+vegetation can hide water. During the Gu and Deyr rains cloud can hide a
+point for weeks; such points show as *no clear view*, not as dry. Check
+important points on the ground.
+
+**Scale.** A national inventory touches roughly 70 Sentinel-2 tiles. The
+pipeline reads tiles in parallel (`workers`) and opens scenes newest first,
+stopping as soon as every point in the tile has a clear view, so most tiles
+need only a few scenes. `.github/workflows/water-points.yml` runs every
+Monday and commits the maps to `maps/water_<date>/`. It skips quietly until
+`data/water_points.csv` exists. If the inventory is sensitive, keep the
+repository private, because the outputs list every point.
 
 ## Reproducing an old map
 
