@@ -1,0 +1,488 @@
+{
+  "catchment_version": "0.1.0",
+  "generated_utc": "2026-10-11T13:32:30+00:00",
+  "reproduce": "catchment forecast --config config/somalia.yaml --run 2026-10-11T00 --start 2026-10-12",
+  "run": "2026-10-11T00:00:00+00:00",
+  "start": "2026-10-12",
+  "days": 7,
+  "utc_offset_hours": 0,
+  "config": {
+    "path": "config/somalia.yaml",
+    "content": {
+      "kicker": "RAINFALL OUTLOOK",
+      "area_name": "SOMALIA",
+      "brand": "UfuqGIS",
+      "style": {},
+      "bbox": [
+        38.0,
+        -2.5,
+        51.5,
+        12.5
+      ],
+      "gfs": {
+        "resolution": "0p25",
+        "base_urls": [
+          "https://noaa-gfs-bdp-pds.s3.amazonaws.com",
+          "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod"
+        ],
+        "cycles": [
+          0
+        ]
+      },
+      "period": {
+        "days": 7,
+        "utc_offset_hours": 0
+      },
+      "classes": {
+        "bounds": [
+          0,
+          2,
+          5,
+          10,
+          20,
+          30,
+          40,
+          50,
+          100,
+          150,
+          200,
+          250
+        ],
+        "colours": [
+          "none",
+          "#f3edc9",
+          "#d9e8a8",
+          "#a9d69a",
+          "#72c09c",
+          "#43a6a3",
+          "#2c87a6",
+          "#2d669f",
+          "#3a4790",
+          "#4a2c7c",
+          "#5a1462",
+          "#2e0734"
+        ],
+        "upsample": 5
+      },
+      "sources": {
+        "country": {
+          "url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SOM/ADM0/geoBoundaries-SOM-ADM0_simplified.geojson",
+          "sha256": "ae7cda4305b463a3a75bec0f7c5486a2abe30b88f98022b20d8b70ad7ebf8642"
+        },
+        "regions": {
+          "url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SOM/ADM1/geoBoundaries-SOM-ADM1_simplified.geojson",
+          "sha256": "a3d87cc4bc6f6d32b40862c34efd325ae61fc22c092c81597e8c49c20c681910",
+          "name_field": "shapeName"
+        },
+        "world": {
+          "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_0_countries.geojson",
+          "sha256": "239eec57ac17f100a11e2536cffc56752c318b50ae765b0918ff7aab4ce8f255",
+          "name_field": "ADMIN",
+          "exclude": [
+            "Somalia",
+            "Somaliland"
+          ]
+        },
+        "rivers": {
+          "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_rivers_lake_centerlines.geojson",
+          "sha256": "bb854a900ecbd3b408df46d5e16e3e0f974ba55993f9d8b5c26e855273c0905a",
+          "name_field": "name",
+          "names": [
+            "Jubba",
+            "Genale",
+            "Shebele",
+            "Shabeelle"
+          ]
+        }
+      },
+      "basins": {
+        "enabled": true,
+        "required": false,
+        "level": 7,
+        "url": "https://data.hydrosheds.org/file/HydroBASINS/standard/hybas_af_lev07_v1c.zip",
+        "upstream_only": true,
+        "outlets": [
+          {
+            "name": "Juba Basin",
+            "lon": 42.55,
+            "lat": 3.8,
+            "label_lon": 40.6,
+            "label_lat": 5.45
+          },
+          {
+            "name": "Shabelle Basin",
+            "lon": 45.2,
+            "lat": 4.74,
+            "label_lon": 41.9,
+            "label_lat": 7.0
+          }
+        ]
+      },
+      "labels": {
+        "countries": [
+          {
+            "name": "Ethiopia",
+            "lon": 39.8,
+            "lat": 8.2
+          },
+          {
+            "name": "Kenya",
+            "lon": 39.8,
+            "lat": 0.9
+          },
+          {
+            "name": "Djibouti",
+            "lon": 42.4,
+            "lat": 11.75
+          }
+        ],
+        "seas": [
+          {
+            "name": "Gulf of Aden",
+            "lon": 46.8,
+            "lat": 12.0
+          },
+          {
+            "name": "Indian Ocean",
+            "lon": 49.2,
+            "lat": 4.4
+          }
+        ],
+        "region_names": {
+          "Hiiraan": "Hiraan",
+          "Lower Shebelle": "Lower Shabelle",
+          "Middle Shebelle": "Middle Shabelle"
+        },
+        "region_positions": {
+          "Banadir": [
+            45.95,
+            1.8
+          ],
+          "Woqooyi Galbeed": [
+            44.55,
+            10.2
+          ],
+          "Awdal": [
+            43.2,
+            10.55
+          ],
+          "Lower Shabelle": [
+            44.1,
+            1.95
+          ],
+          "Middle Shabelle": [
+            45.65,
+            2.95
+          ],
+          "Lower Juba": [
+            41.85,
+            0.0
+          ],
+          "Gedo": [
+            41.75,
+            2.65
+          ],
+          "Sanaag": [
+            47.95,
+            10.4
+          ],
+          "Nugaal": [
+            48.8,
+            7.95
+          ],
+          "Bakool": [
+            43.45,
+            4.5
+          ],
+          "Middle Juba": [
+            42.2,
+            1.45
+          ],
+          "Togdheer": [
+            45.9,
+            8.95
+          ]
+        },
+        "towns": [
+          {
+            "name": "Boorama",
+            "lon": 43.18,
+            "lat": 9.94
+          },
+          {
+            "name": "Hargeysa",
+            "lon": 44.06,
+            "lat": 9.56
+          },
+          {
+            "name": "Burco",
+            "lon": 45.53,
+            "lat": 9.52
+          },
+          {
+            "name": "Ceerigaabo",
+            "lon": 47.37,
+            "lat": 10.62
+          },
+          {
+            "name": "Bosaaso",
+            "lon": 49.18,
+            "lat": 11.28
+          },
+          {
+            "name": "Laas Caanood",
+            "lon": 47.36,
+            "lat": 8.48
+          },
+          {
+            "name": "Garoowe",
+            "lon": 48.48,
+            "lat": 8.4
+          },
+          {
+            "name": "Gaalkacyo",
+            "lon": 47.43,
+            "lat": 6.77
+          },
+          {
+            "name": "Dhuusamarreeb",
+            "lon": 46.39,
+            "lat": 5.54
+          },
+          {
+            "name": "Belet Weyne",
+            "lon": 45.2,
+            "lat": 4.74
+          },
+          {
+            "name": "Xudur",
+            "lon": 43.89,
+            "lat": 4.12
+          },
+          {
+            "name": "Garbahaarey",
+            "lon": 42.22,
+            "lat": 3.33
+          },
+          {
+            "name": "Baydhabo",
+            "lon": 43.65,
+            "lat": 3.12
+          },
+          {
+            "name": "Jowhar",
+            "lon": 45.5,
+            "lat": 2.78
+          },
+          {
+            "name": "Mogadishu",
+            "lon": 45.34,
+            "lat": 2.04
+          },
+          {
+            "name": "Marka",
+            "lon": 44.77,
+            "lat": 1.71
+          },
+          {
+            "name": "Bu'aale",
+            "lon": 42.58,
+            "lat": 0.85
+          },
+          {
+            "name": "Kismaayo",
+            "lon": 42.54,
+            "lat": -0.36
+          }
+        ],
+        "rivers": [
+          {
+            "name": "Juba",
+            "lon": 42.35,
+            "lat": 2.4
+          },
+          {
+            "name": "Shabelle",
+            "lon": 45.7,
+            "lat": 3.85
+          }
+        ]
+      },
+      "caption": "Somalia rainfall outlook for {week}, mapped by UfuqGIS from the NOAA GFS {cycle} run of {run_date}.\n\nHighest {days}-day totals by region: {wettest}.\n\nThis is computer-model guidance and can shift from one run to the next. For warnings and advisories, follow Somalia's national meteorological and disaster-management authorities.",
+      "hashtags": "#Somalia #Deyr #RainfallOutlook #JubaShabelle #UfuqGIS",
+      "animation": {
+        "gif": true,
+        "mp4": true
+      },
+      "output": {
+        "dpi": 150,
+        "width_in": 9.0
+      }
+    }
+  },
+  "gfs_inputs": [
+    {
+      "forecast_hour": 24,
+      "source_url": "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.20261011/00/atmos/gfs.t00z.pgrb2.0p25.f024",
+      "file": "cache/gfs/2026101100/apcp_0-024h.grib2",
+      "sha256": "8aef1c297d8d19f738362ea7d70f84226966d4fe1d259c79284bf9bc2a18997e"
+    },
+    {
+      "forecast_hour": 48,
+      "source_url": "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.20261011/00/atmos/gfs.t00z.pgrb2.0p25.f048",
+      "file": "cache/gfs/2026101100/apcp_0-048h.grib2",
+      "sha256": "ecbcf5a92f2e633f4cc20830b1c23cca2ab9f43619d8f4cecae2518456359dec"
+    },
+    {
+      "forecast_hour": 72,
+      "source_url": "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.20261011/00/atmos/gfs.t00z.pgrb2.0p25.f072",
+      "file": "cache/gfs/2026101100/apcp_0-072h.grib2",
+      "sha256": "c80f4c7e54da4d9640140116bbc8b960ffe2fb9804fe989723f071108caa3c73"
+    },
+    {
+      "forecast_hour": 96,
+      "source_url": "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.20261011/00/atmos/gfs.t00z.pgrb2.0p25.f096",
+      "file": "cache/gfs/2026101100/apcp_0-096h.grib2",
+      "sha256": "ab1f3cca42e5937f6e7d1573cf9b53dd5bf3adaf1de40f349e08b313b6651849"
+    },
+    {
+      "forecast_hour": 120,
+      "source_url": "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.20261011/00/atmos/gfs.t00z.pgrb2.0p25.f120",
+      "file": "cache/gfs/2026101100/apcp_0-120h.grib2",
+      "sha256": "caef11e858c86841af4e007d04f5db11aeecbfe82f60623915b316f85b83ffd3"
+    },
+    {
+      "forecast_hour": 144,
+      "source_url": "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.20261011/00/atmos/gfs.t00z.pgrb2.0p25.f144",
+      "file": "cache/gfs/2026101100/apcp_0-144h.grib2",
+      "sha256": "0f6c0d30a2519ab5bde2f2f60c6bfb3ec62f02eb6044db5a9784e129d674240e"
+    },
+    {
+      "forecast_hour": 168,
+      "source_url": "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.20261011/00/atmos/gfs.t00z.pgrb2.0p25.f168",
+      "file": "cache/gfs/2026101100/apcp_0-168h.grib2",
+      "sha256": "4c13c7d284960c4315472e3ca32c1fde23bbddbb4cf7bcbd1cad56a8895c5a4f"
+    },
+    {
+      "forecast_hour": 192,
+      "source_url": "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.20261011/00/atmos/gfs.t00z.pgrb2.0p25.f192",
+      "file": "cache/gfs/2026101100/apcp_0-192h.grib2",
+      "sha256": "293c1cffd7db6a7908459943d513192a503f3a34e5f1b32c2bc520f6d78669c6"
+    }
+  ],
+  "static_inputs": [
+    {
+      "layer": "country",
+      "url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SOM/ADM0/geoBoundaries-SOM-ADM0_simplified.geojson",
+      "file": "cache/static/geoBoundaries-SOM-ADM0_simplified.geojson",
+      "sha256": "ae7cda4305b463a3a75bec0f7c5486a2abe30b88f98022b20d8b70ad7ebf8642"
+    },
+    {
+      "layer": "regions",
+      "url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/SOM/ADM1/geoBoundaries-SOM-ADM1_simplified.geojson",
+      "file": "cache/static/geoBoundaries-SOM-ADM1_simplified.geojson",
+      "sha256": "a3d87cc4bc6f6d32b40862c34efd325ae61fc22c092c81597e8c49c20c681910"
+    },
+    {
+      "layer": "world",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_0_countries.geojson",
+      "file": "cache/static/ne_10m_admin_0_countries.geojson",
+      "sha256": "239eec57ac17f100a11e2536cffc56752c318b50ae765b0918ff7aab4ce8f255"
+    },
+    {
+      "layer": "rivers",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_rivers_lake_centerlines.geojson",
+      "file": "cache/static/ne_10m_rivers_lake_centerlines.geojson",
+      "sha256": "bb854a900ecbd3b408df46d5e16e3e0f974ba55993f9d8b5c26e855273c0905a"
+    }
+  ],
+  "products": [
+    {
+      "key": "2026-10-12",
+      "label": "Monday 12 October 2026",
+      "start_fh": 24,
+      "end_fh": 48,
+      "kind": "daily",
+      "png": "daily_2026-10-12.png"
+    },
+    {
+      "key": "2026-10-13",
+      "label": "Tuesday 13 October 2026",
+      "start_fh": 48,
+      "end_fh": 72,
+      "kind": "daily",
+      "png": "daily_2026-10-13.png"
+    },
+    {
+      "key": "2026-10-14",
+      "label": "Wednesday 14 October 2026",
+      "start_fh": 72,
+      "end_fh": 96,
+      "kind": "daily",
+      "png": "daily_2026-10-14.png"
+    },
+    {
+      "key": "2026-10-15",
+      "label": "Thursday 15 October 2026",
+      "start_fh": 96,
+      "end_fh": 120,
+      "kind": "daily",
+      "png": "daily_2026-10-15.png"
+    },
+    {
+      "key": "2026-10-16",
+      "label": "Friday 16 October 2026",
+      "start_fh": 120,
+      "end_fh": 144,
+      "kind": "daily",
+      "png": "daily_2026-10-16.png"
+    },
+    {
+      "key": "2026-10-17",
+      "label": "Saturday 17 October 2026",
+      "start_fh": 144,
+      "end_fh": 168,
+      "kind": "daily",
+      "png": "daily_2026-10-17.png"
+    },
+    {
+      "key": "2026-10-18",
+      "label": "Sunday 18 October 2026",
+      "start_fh": 168,
+      "end_fh": 192,
+      "kind": "daily",
+      "png": "daily_2026-10-18.png"
+    },
+    {
+      "key": "total_2026-10-12_2026-10-18",
+      "label": "Weekly Total: Monday 12 October to Sunday 18 October 2026",
+      "start_fh": 24,
+      "end_fh": 192,
+      "kind": "weekly",
+      "png": "total_2026-10-12_2026-10-18.png"
+    },
+    {
+      "kind": "overview",
+      "png": "week_overview.png"
+    },
+    {
+      "kind": "animation",
+      "file": "week_animation.gif"
+    },
+    {
+      "kind": "animation",
+      "file": "week_animation.mp4"
+    }
+  ],
+  "environment": {
+    "python": "3.12.15",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "matplotlib": "3.11.2",
+    "geopandas": "1.2.0",
+    "shapely": "2.1.2",
+    "pygrib": "2.1.8",
+    "pillow": "12.3.0",
+    "imageio-ffmpeg": "0.6.0"
+  }
+}
